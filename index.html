@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cherrybrook Hornets U12</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --black: #101010;
+    --black-soft: #1C1C1C;
+    --red: #D62828;
+    --red-dim: #8F1D1D;
+    --white: #FFFFFF;
+    --white-dim: #B8B8B8;
+    --line: rgba(255,255,255,0.14);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: var(--black);
+    color: var(--white);
+    font-family:'Work Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .stripe-bar{
+    height:10px;
+    background: repeating-linear-gradient(-45deg, var(--red) 0 18px, var(--black) 18px 36px);
+  }
+  header{
+    padding: 22px 20px 18px;
+    background: var(--black-soft);
+    border-bottom: 1px solid var(--line);
+  }
+  .crest-row{ display:flex; align-items:center; gap:14px; }
+  .crest{
+    width:52px; height:52px; border-radius:50%;
+    background: repeating-linear-gradient(0deg, var(--black) 0 6px, var(--red) 6px 12px);
+    border: 2px solid var(--red);
+    flex-shrink:0;
+  }
+  h1{
+    font-family:'Anton', sans-serif;
+    font-weight:400;
+    letter-spacing: 0.5px;
+    font-size: 26px;
+    margin:0;
+    line-height:1.05;
+    text-transform: uppercase;
+    color: var(--white);
+  }
+  header .sub{
+    font-size:12.5px;
+    color: var(--white-dim);
+    margin-top:3px;
+    letter-spacing:0.4px;
+  }
+  nav{
+    display:flex;
+    background: var(--black);
+    border-bottom: 1px solid var(--line);
+    overflow-x:auto;
+  }
+  nav button{
+    flex:1;
+    min-width:84px;
+    background:none;
+    border:none;
+    color: var(--white-dim);
+    font-family:'Work Sans', sans-serif;
+    font-weight:600;
+    font-size:12.5px;
+    letter-spacing:0.6px;
+    text-transform:uppercase;
+    padding:14px 8px;
+    cursor:pointer;
+    border-bottom: 3px solid transparent;
+  }
+  nav button.active{
+    color: var(--red);
+    border-bottom-color: var(--red);
+  }
+  main{ padding: 18px 16px 60px; max-width:640px; margin:0 auto; }
+
+  .next-up-label{
+    font-size:11px;
+    letter-spacing:1.4px;
+    text-transform:uppercase;
+    color: var(--red);
+    font-weight:700;
+    margin: 0 0 8px 2px;
+  }
+  .ticket{
+    position:relative;
+    background: linear-gradient(180deg, var(--black-soft), var(--black));
+    border: 1px solid var(--line);
+    border-radius:14px;
+    padding:18px 18px 16px;
+    margin-bottom:22px;
+  }
+  .ticket::before, .ticket::after{
+    content:"";
+    position:absolute;
+    top:50%; transform:translateY(-50%);
+    width:18px; height:18px;
+    background: var(--black);
+    border-radius:50%;
+  }
+  .ticket::before{ left:-9px; }
+  .ticket::after{ right:-9px; }
+  .ticket .row1{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;}
+  .ticket .date{ font-family:'Anton', sans-serif; font-size:15px; letter-spacing:0.4px; color:var(--red); text-transform:uppercase;}
+  .ticket .kickoff{ font-size:13px; color:var(--white-dim); font-weight:600;}
+  .ticket .match{ font-family:'Anton', sans-serif; font-size:22px; line-height:1.15; text-transform:uppercase; margin-bottom:10px; color:var(--white);}
+  .ticket .venue{ font-size:12.5px; color:var(--white-dim); border-top:1px dashed var(--line); padding-top:10px; margin-top:2px;}
+  .badge{
+    display:inline-block;
+    font-size:10.5px; font-weight:700; letter-spacing:0.6px;
+    padding:3px 8px; border-radius:20px; text-transform:uppercase;
+    margin-right:6px;
+  }
+  .badge.home{ background: var(--white); color: var(--black); border:1px solid var(--white);}
+  .badge.away{ background: rgba(214,40,40,0.2); color: var(--red); border:1px solid rgba(214,40,40,0.5);}
+  .badge.training{ background: rgba(255,255,255,0.08); color: var(--white-dim); border:1px solid var(--line);}
+  .badge.overdue{ background: var(--red); color: var(--white); border:1px solid var(--red);}
+
+  .section-title{
+    font-family:'Anton', sans-serif;
+    font-size:15px;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    color: var(--white);
+    margin: 26px 0 10px 2px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .section-title .count{ font-family:'Work Sans'; font-size:12px; color:var(--white-dim); font-weight:600;}
+
+  .card{
+    background: var(--black-soft);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:13px 14px;
+    margin-bottom:9px;
+  }
+  .card .row1{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .card .match{ font-weight:700; font-size:14.5px; margin-bottom:4px; color:var(--white);}
+  .card .meta{ font-size:12px; color:var(--white-dim); line-height:1.5;}
+  .card .score{ font-family:'Anton', sans-serif; font-size:20px; color:var(--red); white-space:nowrap;}
+  .result-tag{ font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:5px; text-transform:uppercase; }
+  .result-tag.W{ background: var(--white); color: var(--black);}
+  .result-tag.D{ background:rgba(255,255,255,0.1); color:var(--white-dim);}
+  .result-tag.L{ background: var(--red); color: var(--white);}
+  .scorers-line{ font-size:12.5px; color:var(--white-dim); margin-top:8px; line-height:1.5; }
+
+  .empty{
+    text-align:center; padding:30px 16px; color:var(--white-dim); font-size:13.5px;
+    border:1px dashed var(--line); border-radius:10px;
+  }
+
+  button.pill{
+    background: none;
+    border:1px solid var(--line);
+    color:var(--white-dim);
+    font-family:'Work Sans'; font-size:12px; font-weight:600;
+    padding:6px 11px; border-radius:20px; cursor:pointer;
+  }
+  button.pill.accent{ border-color: var(--red); color: var(--red); }
+  button.pill:active{ opacity:0.7; }
+
+  .add-box{
+    background: var(--black-soft); border:1px solid var(--line); border-radius:10px;
+    padding:14px; margin-top:16px;
+  }
+  .add-box h3{ font-family:'Anton'; font-size:13px; letter-spacing:0.4px; text-transform:uppercase; margin:0 0 10px; color:var(--red);}
+  .add-box label{ display:block; font-size:11px; color:var(--white-dim); margin:8px 0 4px; text-transform:uppercase; letter-spacing:0.3px;}
+  .add-box input, .add-box select{
+    width:100%; padding:9px 10px; border-radius:7px; border:1px solid var(--line);
+    background: var(--black); color: var(--white); font-family:'Work Sans'; font-size:13.5px;
+  }
+  .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .add-box .submit{
+    margin-top:14px; width:100%; padding:11px; border-radius:8px; border:none;
+    background: var(--red); color: var(--white); font-weight:700; font-size:13.5px;
+    letter-spacing:0.3px; cursor:pointer; text-transform:uppercase;
+  }
+  .add-box .submit.secondary{ background: var(--white); color: var(--black); }
+
+  .roster-row{ display:flex; justify-content:space-between; align-items:center; background:var(--black-soft); border:1px solid var(--line); border-radius:9px; padding:11px 13px; margin-bottom:8px;}
+  .roster-row .name{ font-weight:600; font-size:14px; color:var(--white);}
+  .roster-row .actions{ display:flex; gap:14px; align-items:center; }
+  .roster-row .rn{ background:none; border:none; color: var(--white-dim); font-size:12px; font-weight:700; cursor:pointer; }
+  .roster-row .rm{ background:none; border:none; color: var(--red); font-size:12px; font-weight:700; cursor:pointer; }
+
+  .card.clickable{ cursor:pointer; }
+  .card.clickable:active{ opacity:0.85; }
+  .ticket.clickable{ cursor:pointer; }
+  .chevron{ font-size:11px; color:var(--white-dim); margin-left:6px; }
+  .att-panel{ margin-top:14px; padding-top:14px; border-top:1px dashed var(--line); }
+  .att-panel .rsvp-note{ font-size:11.5px; color:var(--white-dim); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.3px; }
+
+  .mini-tally{ display:flex; align-items:center; gap:14px; margin-top:9px; }
+  .mini-tally span{ font-size:12.5px; font-weight:600; display:flex; align-items:center; gap:4px; }
+  .mini-tally .dot{ width:8px; height:8px; border-radius:50%; display:inline-block; }
+  .mini-tally .dot.in{ background: var(--white); }
+  .mini-tally .dot.maybe{ background: var(--red); opacity:0.6; }
+  .mini-tally .dot.out{ background: var(--red); }
+  .mini-tally .mi-in{ color: var(--white); }
+  .mini-tally .mi-maybe{ color: var(--white-dim); }
+  .mini-tally .mi-out{ color: var(--white-dim); }
+
+  .ticker-strip{ display:flex; gap:8px; margin-bottom:18px; }
+  .ticker-strip div{ flex:1; text-align:center; padding:10px 4px; border-radius:9px; border:1px solid var(--line); background:var(--black-soft); }
+  .ticker-strip .tn{ font-family:'Anton'; font-size:20px; display:block; color:var(--white); }
+  .ticker-strip .tl{ font-size:10px; text-transform:uppercase; letter-spacing:0.4px; color:var(--white-dim); }
+
+  .att-panel textarea{
+    width:100%; padding:10px; border-radius:8px; border:1px solid var(--line);
+    background:var(--black); color:var(--white); font-family:'Work Sans'; font-size:13.5px; resize:vertical;
+  }
+  .report-textarea{
+    min-height:90px; overflow:hidden; resize:none; line-height:1.5;
+  }
+  .stats-grid-head, .stats-grid-row{
+    display:grid; grid-template-columns: 1.6fr 0.8fr 0.8fr 0.9fr; gap:8px; align-items:center;
+    padding:6px 0;
+  }
+  .stats-grid-head{ font-size:10px; text-transform:uppercase; letter-spacing:0.3px; color:var(--white-dim); }
+  .stats-grid-row{ border-bottom:1px solid var(--line); }
+  .stats-grid-row .name{ font-size:13px; font-weight:600; color:var(--white); }
+  .stat-num{
+    width:100%; padding:6px; border-radius:6px; border:1px solid var(--line);
+    background:var(--black); color:var(--white); font-size:13px; text-align:center;
+  }
+  .stat-check{ width:18px; height:18px; justify-self:center; accent-color: var(--red); }
+
+  .stats-table-wrap{ overflow-x:auto; border:1px solid var(--line); border-radius:10px; }
+  table.stats-table{ border-collapse:collapse; width:100%; font-size:13px; white-space:nowrap; }
+  table.stats-table th, table.stats-table td{ padding:10px 12px; text-align:left; border-bottom:1px solid var(--line); }
+  table.stats-table th{ color:var(--red); font-size:11px; text-transform:uppercase; letter-spacing:0.3px; }
+  table.stats-table tr:last-child td{ border-bottom:none; }
+  tr.lt-us{ background: rgba(214,40,40,0.16); }
+  tr.lt-us td{ font-weight:700; color:var(--white); }
+
+  .att-select{
+    width:100%; padding:11px; border-radius:9px; border:1px solid var(--line);
+    background: var(--black-soft); color:var(--white); font-size:13.5px; margin-bottom:14px;
+  }
+  .tally{ display:flex; gap:10px; margin-bottom:16px;}
+  .tally div{ flex:1; text-align:center; padding:10px 4px; border-radius:9px; border:1px solid var(--line); }
+  .tally .n{ font-family:'Anton'; font-size:20px; display:block;}
+  .tally .lbl{ font-size:10px; text-transform:uppercase; letter-spacing:0.4px; color:var(--white-dim);}
+  .tally .in .n{ color: var(--white);}
+  .tally .maybe .n{ color: var(--red);}
+  .tally .out .n{ color: var(--red);}
+
+  .att-row{ display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line); }
+  .att-row .name{ font-size:14px; font-weight:600; color:var(--white); }
+  .att-btns{ display:flex; gap:6px; }
+  .att-btns button{
+    width:34px; height:30px; border-radius:7px; border:1px solid var(--line); background:var(--black-soft);
+    color:var(--white-dim); font-size:12px; font-weight:700; cursor:pointer;
+  }
+  .att-btns button.sel-in{ background: var(--white); color: var(--black); border-color:var(--white);}
+  .att-btns button.sel-maybe{ background:rgba(214,40,40,0.25); color:var(--red); border-color:var(--red);}
+  .att-btns button.sel-out{ background: var(--red); color: var(--white); border-color:var(--red);}
+
+  .toggle-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+  .toggle-row .lbl{ font-size:12px; color:var(--white-dim); }
+  .switch{ position:relative; width:40px; height:22px; }
+  .switch input{ opacity:0; width:0; height:0; }
+  .slider{ position:absolute; cursor:pointer; inset:0; background:var(--line); border-radius:22px; transition:.15s; }
+  .slider:before{ content:""; position:absolute; height:16px; width:16px; left:3px; top:3px; background:var(--white-dim); border-radius:50%; transition:.15s;}
+  input:checked + .slider{ background: var(--red-dim);}
+  input:checked + .slider:before{ transform:translateX(18px); background:var(--white);}
+
+  .foot-note{ text-align:center; font-size:11px; color:var(--white-dim); margin-top:26px; opacity:0.7; }
+
+  .setup{ max-width:520px; margin:0 auto; }
+  .setup h2{ font-family:'Anton'; font-size:20px; text-transform:uppercase; color:var(--red); margin:0 0 4px; }
+  .setup p{ font-size:13.5px; color:var(--white-dim); line-height:1.6; }
+  .setup ol{ padding-left:20px; font-size:13.5px; line-height:1.9; color:var(--white); }
+  .setup code{ background:var(--black-soft); border:1px solid var(--line); padding:2px 6px; border-radius:5px; font-size:12.5px; }
+  .setup pre{ background:var(--black-soft); border:1px solid var(--line); border-radius:8px; padding:12px; font-size:11.5px; overflow-x:auto; color:var(--white-dim); }
+</style>
+</head>
+<body>
+
+<div class="stripe-bar"></div>
+<header>
+  <div class="crest-row">
+    <div class="crest"></div>
+    <div>
+      <h1 id="teamName">Cherrybrook Hornets U12</h1>
+      <div class="sub" id="headerSub">Wigan &amp; District Youth League · East Division</div>
+    </div>
+  </div>
+</header>
+
+<nav id="tabs">
+  <button data-tab="fixtures" class="active">Fixtures</button>
+  <button data-tab="results">Results</button>
+  <button data-tab="stats">Stats</button>
+  <button data-tab="table">Table</button>
+  <button data-tab="squad">Squad</button>
+  <button data-tab="history">History</button>
+</nav>
+
+<main id="main"></main>
+
+<script>
+let state = { events: [], roster: [], attendance: {}, coachMode: false, tab: 'fixtures', trainingConfig: null, leagueTable: [], seasonLabel: null, pastSeasons: [], viewingArchive: null };
+
+const SEED_EVENTS = [
+  {id:'e1', type:'match', date:'2026-09-06', kickoff:'08:45', home:true, opponent:'Shevington U12 Royals', venue:'Leisure United, Laithwaite Park Hub P2', played:false},
+  {id:'e2', type:'match', date:'2026-09-13', kickoff:'11:30', home:false, opponent:'Golborne Sports Junior U12 Vikings', venue:'Leisure United, William Fosters Pitch 2', played:false},
+  {id:'e3', type:'match', date:'2026-09-20', kickoff:'11:00', home:false, opponent:'Hawkley U12 Hawkley', venue:"St James' C of E Primary School", played:false},
+  {id:'e4', type:'match', date:'2026-09-27', kickoff:'08:45', home:true, opponent:'Daisy Hill Junior U12 Titans', venue:'Leisure United, Laithwaite Park Hub P2', played:false},
+  {id:'e5', type:'match', date:'2026-10-04', kickoff:'12:45', home:false, opponent:"Highfield Grange U12's Rangers", venue:'Leisure United, William Fosters Pitch 2', played:false},
+  {id:'e6', type:'match', date:'2026-10-11', kickoff:'08:45', home:true, opponent:'Cherrybrook U12 Eagles', venue:'Leisure United, Laithwaite Park Hub P2', played:false},
+  {id:'e7', type:'match', date:'2026-10-18', kickoff:'10:00', home:false, opponent:'Hindley Juniors U12 Falcons', venue:'Hindley Juniors FC, Pitch 3', played:false},
+  {id:'e8', type:'match', date:'2026-10-25', kickoff:'11:15', home:true, opponent:'Hindley Juniors U12 Falcons', venue:'Leisure United, Laithwaite Park Hub P2', played:false},
+  {id:'e9', type:'match', date:'2026-11-01', kickoff:'10:00', home:false, opponent:'Shevington U12 Royals', venue:'Vicarage Lane #2', played:false},
+  {id:'e10', type:'match', date:'2026-11-15', kickoff:'08:45', home:true, opponent:'Hawkley U12 Hawkley', venue:'Leisure United, Laithwaite Park Hub P2', played:false},
+  {id:'e11', type:'match', date:'2026-11-22', kickoff:'10:00', home:false, opponent:'Daisy Hill Junior U12 Titans', venue:'Daisy Hill Juniors FC', played:false},
+  {id:'e12', type:'match', date:'2026-11-29', kickoff:'08:45', home:true, opponent:"Highfield Grange U12's Rangers", venue:'Leisure United, Laithwaite Park Hub P2', played:false},
+  {id:'e13', type:'match', date:'2026-12-06', kickoff:'10:00', home:false, opponent:'Cherrybrook U12 Eagles', venue:'Leisure United, Laithwaite Park Hub P2', played:false},
+  {id:'e14', type:'match', date:'2027-01-10', kickoff:'12:45', home:false, opponent:'Golborne Sports Junior U12 Vikings', venue:'Leisure United, William Fosters Pitch 2', played:false},
+  {id:'e15', type:'match', date:'2027-01-17', kickoff:'11:00', home:false, opponent:'Hawkley U12 Hawkley', venue:"St James' C of E Primary School", played:false},
+  {id:'e16', type:'match', date:'2027-01-24', kickoff:'10:00', home:true, opponent:'Daisy Hill Junior U12 Titans', venue:'Leisure United, Laithwaite Park Hub P2', played:false},
+  {id:'e17', type:'match', date:'2027-01-31', kickoff:'10:15', home:false, opponent:"Highfield Grange U12's Rangers", venue:'Leisure United, William Fosters Pitch 2', played:false},
+  {id:'e18', type:'match', date:'2027-02-07', kickoff:'08:45', home:true, opponent:'Cherrybrook U12 Eagles', venue:'Leisure United, Laithwaite Park Hub P2', played:false},
+  {id:'e19', type:'match', date:'2027-02-14', kickoff:'10:00', home:false, opponent:'Hindley Juniors U12 Falcons', venue:'Hindley Juniors FC, Pitch 3', played:false},
+  {id:'e20', type:'match', date:'2027-02-21', kickoff:'10:00', home:true, opponent:'Golborne Sports Junior U12 Vikings', venue:'Leisure United, Laithwaite Park Hub P2', played:false},
+  {id:'e21', type:'match', date:'2027-04-04', kickoff:'10:00', home:true, opponent:'Shevington U12 Royals', venue:'Leisure United, Laithwaite Park Hub P2', played:false},
+];
+
+const DEFAULT_TRAINING = { dayOfWeek: 2, time: '18:30', venue: '' }; // 2 = Tuesday
+
+const SEED_LEAGUE_TABLE = [
+  {id:'lt1', team:'Cherrybrook U12 hornets', played:4, won:3, drawn:1, lost:0, gd:16},
+  {id:'lt2', team:'Cherrybrook U12 eagles', played:4, won:3, drawn:0, lost:1, gd:4},
+  {id:'lt3', team:"Highfield Grange U12's Rangers", played:4, won:3, drawn:0, lost:1, gd:2},
+  {id:'lt4', team:'Hindley Juniors U12 Falcons', played:4, won:3, drawn:0, lost:1, gd:8},
+  {id:'lt5', team:'Hawkley U12 Hawkley', played:4, won:1, drawn:1, lost:2, gd:4},
+  {id:'lt6', team:'Daisy Hill Junior U12 Titans', played:4, won:1, drawn:0, lost:3, gd:-7},
+  {id:'lt7', team:'Shevington U12 Royals', played:4, won:1, drawn:0, lost:3, gd:-5},
+  {id:'lt8', team:'Golborne Sports Junior U12 Vikings', played:4, won:0, drawn:0, lost:4, gd:-22},
+];
+
+const SEED_ROSTER = [
+  {id:'p1', name:'Lewis Appleton'},
+  {id:'p2', name:'Leighton Smith'},
+  {id:'p3', name:'Lacey-mae Potter'},
+  {id:'p4', name:'Daniel Jones'},
+  {id:'p5', name:'Orgito Dengu'},
+  {id:'p6', name:'Aaron Bailey'},
+  {id:'p7', name:'Xander Amison'},
+  {id:'p8', name:'Sam Williams'},
+  {id:'p9', name:'Jakob Winrow'},
+  {id:'p10', name:'Adam Ravdonovic'},
+  {id:'p11', name:'Teddy Barker'},
+  {id:'p12', name:'Ralph Hulme'},
+  {id:'p13', name:'Rubie Morris'},
+  {id:'p14', name:'Amad Amin'},
+  {id:'p15', name:'Thomas Lythgoe'},
+];
+
+const $ = (sel, el=document) => el.querySelector(sel);
+const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
+
+// ============================================================
+// FIREBASE SETUP — paste your project's config here.
+// Get this from: Firebase Console > Project Settings > General
+// > Your apps > Web app > SDK setup and configuration.
+// ============================================================
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBIXTC8AZgx52cY09zRnnhiEHwquIBCPHU",
+  authDomain: "hornetsu12s.firebaseapp.com",
+  projectId: "hornetsu12s",
+  storageBucket: "hornetsu12s.firebasestorage.app",
+  messagingSenderId: "347649153059",
+  appId: "1:347649153059:web:caca0d4c3ba733a613b996"
+};
+// ============================================================
+
+let db = null;
+let docRef = null;
+
+function isConfigured(){
+  return FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.startsWith('YOUR_');
+}
+
+function renderSetupScreen(){
+  document.querySelector('nav').style.display = 'none';
+  document.querySelector('#main').innerHTML = `
+    <div class="setup">
+      <h2>One-time setup needed</h2>
+      <p>This app stores its data in a free Firebase project so every coach and parent sees the same live data, wherever this file is hosted. It just needs connecting once.</p>
+      <ol>
+        <li>Go to <code>console.firebase.google.com</code> and create a free project (no card needed).</li>
+        <li>In the project, open <b>Build → Firestore Database → Create database</b>. Start in test mode, pick a region near you.</li>
+        <li>Open the <b>Rules</b> tab in Firestore and paste in:
+          <pre>rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /hornets/{doc=**} {
+      allow read, write: if true;
+    }
+  }
+}</pre>
+          then click Publish. (This keeps it simple since there's no login — anyone with the link can update it, same as a shared spreadsheet.)
+        </li>
+        <li>Go to <b>Project settings</b> (gear icon) → scroll to "Your apps" → click the <code>&lt;/&gt;</code> web icon to register a web app.</li>
+        <li>Copy the <code>firebaseConfig</code> values it shows you into the <code>FIREBASE_CONFIG</code> object near the top of this file's code, then save and re-upload it to your host.</li>
+      </ol>
+      <p>Once that's done, refresh this page and it'll connect automatically.</p>
+    </div>`;
+}
+
+async function loadAll(){
+  if(!isConfigured()){
+    renderSetupScreen();
+    return;
+  }
+  try{
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore();
+    docRef = db.collection('hornets').doc('teamData');
+  } catch(e){
+    console.error('Firebase init failed', e);
+    renderSetupScreen();
+    return;
+  }
+
+  try{
+    state.coachMode = localStorage.getItem('hornetsCoachMode') === 'true';
+  } catch(e){ /* localStorage unavailable, default false */ }
+
+  docRef.onSnapshot((snap) => {
+    const data = snap.exists ? snap.data() : {};
+    state.events = data.events || SEED_EVENTS;
+    state.roster = data.roster || SEED_ROSTER;
+    state.attendance = data.attendance || {};
+    state.trainingConfig = data.trainingConfig || DEFAULT_TRAINING;
+    state.leagueTable = data.leagueTable || SEED_LEAGUE_TABLE;
+    state.seasonLabel = data.seasonLabel || '2026/27';
+    state.pastSeasons = data.pastSeasons || [];
+    if(!snap.exists){
+      docRef.set({ events: SEED_EVENTS, roster: SEED_ROSTER, attendance: {}, trainingConfig: DEFAULT_TRAINING, leagueTable: SEED_LEAGUE_TABLE, seasonLabel: '2026/27', pastSeasons: [] });
+    } else {
+      const patch = {};
+      if(!data.leagueTable) patch.leagueTable = SEED_LEAGUE_TABLE;
+      if(!data.seasonLabel) patch.seasonLabel = '2026/27';
+      if(!data.pastSeasons) patch.pastSeasons = [];
+      if(Object.keys(patch).length) docRef.set(patch, { merge: true });
+    }
+    updateHeaderSeason();
+    render();
+  }, (err) => {
+    console.error('Firestore connection error', err);
+    document.querySelector('#main').innerHTML = `<div class="empty">Couldn't connect to Firebase. Double-check the config values and that Firestore rules are published.</div>`;
+  });
+}
+
+function saveField(field, value){
+  if(!docRef) return Promise.resolve();
+  return docRef.set({ [field]: value }, { merge: true }).catch(e => console.error('save failed', e));
+}
+
+function updateHeaderSeason(){
+  const el = document.getElementById('headerSub');
+  if(el && state.seasonLabel){
+    el.textContent = `Wigan & District Youth League · East Division · ${state.seasonLabel} Season`;
+  }
+}
+
+function fmtDate(d){
+  const dt = new Date(d+'T00:00:00');
+  return dt.toLocaleDateString('en-GB', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
+}
+function fmtDateShort(d){
+  const dt = new Date(d+'T00:00:00');
+  return dt.toLocaleDateString('en-GB', { weekday:'short', day:'2-digit', month:'short' });
+}
+function isoDate(dt){ return dt.toISOString().slice(0,10); }
+
+// Generates recurring weekly training sessions in a rolling window:
+// from today through 10 weeks ahead, so it always has a fresh set
+// without needing hundreds of stored records. Past sessions drop off by themselves.
+function getRecurringTrainingSessions(){
+  const cfg = state.trainingConfig || DEFAULT_TRAINING;
+  const sessions = [];
+  const start = new Date();
+  const end = new Date();
+  end.setDate(end.getDate() + 70);
+  let cursor = new Date(start);
+  while(cursor <= end){
+    if(cursor.getDay() === cfg.dayOfWeek){
+      const dateStr = isoDate(cursor);
+      sessions.push({
+        id: 'training-' + dateStr,
+        type: 'training',
+        date: dateStr,
+        kickoff: cfg.time,
+        venue: cfg.venue,
+        played: false,
+        recurring: true
+      });
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return sessions;
+}
+
+function allEventsWithTraining(){
+  return [...state.events, ...getRecurringTrainingSessions()];
+}
+
+function upcoming(){
+  const today = isoDate(new Date());
+  return allEventsWithTraining().filter(e=>!e.played && (e.type !== 'training' || e.date >= today)).sort((a,b)=> (a.date+a.kickoff).localeCompare(b.date+b.kickoff));
+}
+function past(){
+  return state.events.filter(e=>e.played).sort((a,b)=> (b.date+b.kickoff).localeCompare(a.date+a.kickoff));
+}
+
+function matchLabel(e){
+  if(e.type === 'training') return 'Training Session';
+  return e.home ? `Hornets vs ${e.opponent}` : `${e.opponent} vs Hornets`;
+}
+
+function resultTag(e){
+  if(e.scoreFor > e.scoreAgainst) return 'W';
+  if(e.scoreFor < e.scoreAgainst) return 'L';
+  return 'D';
+}
+
+function render(){
+  $$('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === state.tab));
+  const main = $('#main');
+  if(state.tab === 'fixtures') main.innerHTML = renderFixtures();
+  else if(state.tab === 'results') main.innerHTML = renderResults();
+  else if(state.tab === 'stats') main.innerHTML = renderStats();
+  else if(state.tab === 'table') main.innerHTML = renderTable();
+  else if(state.tab === 'squad') main.innerHTML = renderSquad();
+  else if(state.tab === 'history') main.innerHTML = renderHistory();
+  bindTabEvents();
+}
+
+function renderFixtures(){
+  const up = upcoming();
+  const todayStr = isoDate(new Date());
+  const next = up.find(e => e.date >= todayStr);
+  let html = '';
+  if(next){
+    const isOpen = state.expandedEventId === next.id;
+    const entryOpen = state.expandedMatchEntryId === next.id;
+    html += `<div class="next-up-label">Next Up · Tap to confirm attendance</div>`;
+    html += `<div class="ticket clickable" data-toggle-att="${next.id}">
+      <div class="row1">
+        <div class="date">${fmtDate(next.date)}</div>
+        <div class="kickoff">KO ${next.kickoff}</div>
+      </div>
+      <div class="match">${matchLabel(next)}</div>
+      <div>
+        <span class="badge ${next.type==='training' ? 'training' : (next.home ? 'home':'away')}">${next.type==='training' ? 'Training' : (next.home?'Home':'Away')}</span>
+        ${next.type==='match' && next.date < isoDate(new Date()) ? `<span class="badge overdue">Needs Result</span>` : ''}
+        <span class="chevron">${isOpen ? '▲ hide attendance' : '▼ confirm attendance'}</span>
+      </div>
+      ${next.venue ? `<div class="venue">📍 ${next.venue}</div>` : ''}
+      ${renderMiniTally(next)}
+      ${next.type === 'match' ? `<div style="margin-top:10px; text-align:right;"><button class="pill accent" data-toggle-entry="${next.id}">${entryOpen ? 'Hide Result Entry' : 'Enter Result'}</button></div>` : ''}
+      ${state.coachMode && !next.id.startsWith('training-') ? `<div style="margin-top:8px; text-align:right;"><button class="pill" data-toggle-edit="${next.id}">${state.expandedEditId===next.id ? 'Hide Edit' : 'Edit'}</button></div>` : ''}
+      ${state.expandedEditId === next.id ? renderEditFixturePanel(next) : ''}
+      ${entryOpen ? renderMatchEntryPanel(next) : ''}
+      ${isOpen ? renderAttendancePanel(next) : ''}
+    </div>`;
+  } else {
+    html += `<div class="empty">No upcoming fixtures scheduled.</div>`;
+  }
+
+  html += `<div class="section-title">All Fixtures &amp; Training <span class="count">${up.length}</span></div>`;
+  if(up.length === 0){
+    html += `<div class="empty">Nothing on the calendar yet.</div>`;
+  } else {
+    up.forEach(e => {
+      if(e.id === next?.id) return;
+      const isOpen = state.expandedEventId === e.id;
+      const entryOpen = state.expandedMatchEntryId === e.id;
+      html += `<div class="card clickable" data-toggle-att="${e.id}">
+        <div class="row1">
+          <div>
+            <div class="match">${matchLabel(e)}</div>
+            <div class="meta">${fmtDateShort(e.date)} · KO ${e.kickoff}${e.venue ? `<br>${e.venue}` : ''}</div>
+          </div>
+          <span class="badge ${e.type==='training' ? 'training' : (e.home ? 'home':'away')}">${e.type==='training' ? 'Training' : (e.home?'Home':'Away')}</span>
+          ${e.type==='match' && e.date < isoDate(new Date()) ? `<span class="badge overdue">Needs Result</span>` : ''}
+        </div>
+        <div class="chevron">${isOpen ? '▲ hide attendance' : '▼ confirm attendance'}</div>
+        ${renderMiniTally(e)}
+        ${e.type === 'match' ? `<div style="margin-top:10px; text-align:right;"><button class="pill accent" data-toggle-entry="${e.id}">${entryOpen ? 'Hide Result Entry' : 'Enter Result'}</button></div>` : ''}
+        ${state.coachMode && !e.id.startsWith('training-') ? `<div style="margin-top:8px; text-align:right;"><button class="pill" data-toggle-edit="${e.id}">${state.expandedEditId===e.id ? 'Hide Edit' : 'Edit'}</button></div>` : ''}
+        ${state.expandedEditId === e.id ? renderEditFixturePanel(e) : ''}
+        ${entryOpen ? renderMatchEntryPanel(e) : ''}
+        ${isOpen ? renderAttendancePanel(e) : ''}
+      </div>`;
+    });
+  }
+
+  html += renderTrainingBox();
+  html += renderAddEventBox();
+  html += renderCoachToggle();
+  return html;
+}
+
+function renderEditFixturePanel(ev){
+  let html = `<div class="att-panel" data-stop-toggle="1">
+    <div class="rsvp-note">Edit ${ev.type === 'training' ? 'Training Session' : 'Fixture'}</div>
+    <div class="two-col">
+      <div>
+        <label>Date</label>
+        <input type="date" id="editDate-${ev.id}" value="${ev.date}" />
+      </div>
+      <div>
+        <label>Kick-off / Start</label>
+        <input type="time" id="editTime-${ev.id}" value="${ev.kickoff}" />
+      </div>
+    </div>`;
+  if(ev.type === 'match'){
+    html += `<label>Opponent</label>
+    <input id="editOpponent-${ev.id}" value="${ev.opponent || ''}" />
+    <label>Home or Away</label>
+    <select id="editHome-${ev.id}">
+      <option value="true" ${ev.home ? 'selected' : ''}>Home</option>
+      <option value="false" ${!ev.home ? 'selected' : ''}>Away</option>
+    </select>`;
+  }
+  html += `<label>Venue</label>
+    <input id="editVenue-${ev.id}" value="${ev.venue || ''}" />
+    <button class="submit" style="margin-top:14px;" data-save-edit="${ev.id}">Save Changes</button>
+  </div>`;
+  return html;
+}
+
+function renderMiniTally(ev){
+  if(state.roster.length === 0) return '';
+  const att = state.attendance[ev.id] || {};
+  let counts = {in:0, maybe:0, out:0};
+  state.roster.forEach(p => {
+    const s = att[p.id];
+    if(s === 'in') counts.in++;
+    else if(s === 'maybe') counts.maybe++;
+    else if(s === 'out') counts.out++;
+  });
+  const unconfirmed = state.roster.length - counts.in - counts.maybe - counts.out;
+  return `<div class="mini-tally">
+    <span class="mi-in"><span class="dot in"></span>${counts.in} in</span>
+    <span class="mi-maybe"><span class="dot maybe"></span>${counts.maybe} maybe</span>
+    <span class="mi-out"><span class="dot out"></span>${counts.out} out</span>
+    ${unconfirmed > 0 ? `<span class="mi-maybe">${unconfirmed} unconfirmed</span>` : ''}
+  </div>`;
+}
+
+function renderAttendancePanel(ev){
+  if(state.roster.length === 0){
+    return `<div class="att-panel"><div class="empty">Add players in the Squad tab to track availability here.</div></div>`;
+  }
+  const att = state.attendance[ev.id] || {};
+  let counts = {in:0, maybe:0, out:0};
+  state.roster.forEach(p => {
+    const s = att[p.id];
+    if(s === 'in') counts.in++;
+    else if(s === 'maybe') counts.maybe++;
+    else if(s === 'out') counts.out++;
+  });
+
+  let html = `<div class="att-panel">
+    <div class="rsvp-note">${ev.played ? 'Who actually played?' : "Who's in for this one?"}</div>
+    <div class="tally">
+      <div class="in"><span class="n">${counts.in}</span><span class="lbl">In</span></div>
+      <div class="maybe"><span class="n">${counts.maybe}</span><span class="lbl">Maybe</span></div>
+      <div class="out"><span class="n">${counts.out}</span><span class="lbl">Out</span></div>
+    </div>`;
+
+  state.roster.forEach(p => {
+    const s = att[p.id];
+    html += `<div class="att-row">
+      <span class="name">${p.name}</span>
+      <div class="att-btns">
+        <button class="${s==='in'?'sel-in':''}" data-att="${ev.id}|${p.id}|in">✓</button>
+        <button class="${s==='maybe'?'sel-maybe':''}" data-att="${ev.id}|${p.id}|maybe">?</button>
+        <button class="${s==='out'?'sel-out':''}" data-att="${ev.id}|${p.id}|out">✕</button>
+      </div>
+    </div>`;
+  });
+
+  html += `</div>`;
+  return html;
+}
+
+function renderTrainingBox(){
+  const cfg = state.trainingConfig || DEFAULT_TRAINING;
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  let opts = days.map((d,i)=>`<option value="${i}" ${i===cfg.dayOfWeek?'selected':''}>${d}</option>`).join('');
+  return `<div class="add-box">
+    <h3>Weekly Training</h3>
+    <label>Day</label>
+    <select id="trainDay">${opts}</select>
+    <div class="two-col">
+      <div>
+        <label>Start time</label>
+        <input id="trainTime" type="time" value="${cfg.time}" />
+      </div>
+      <div>
+        <label>Venue</label>
+        <input id="trainVenue" value="${cfg.venue}" placeholder="e.g. Cherrybrook Training Ground" />
+      </div>
+    </div>
+    <button class="submit secondary" id="saveTrainingBtn">Save Training Slot</button>
+  </div>`;
+}
+
+function renderAddEventBox(){
+  return `<div class="add-box">
+    <h3>Add One-Off Fixture or Session</h3>
+    <label>Type</label>
+    <select id="newType">
+      <option value="match">Match</option>
+      <option value="training">Training</option>
+    </select>
+    <div id="oppField">
+      <label>Opponent</label>
+      <input id="newOpponent" placeholder="e.g. Hawkley U12 Hawkley" />
+    </div>
+    <div class="two-col">
+      <div>
+        <label>Date</label>
+        <input id="newDate" type="date" />
+      </div>
+      <div>
+        <label>Kick-off / Start</label>
+        <input id="newTime" type="time" />
+      </div>
+    </div>
+    <div id="homeField">
+      <label>Home or Away</label>
+      <select id="newHome">
+        <option value="true">Home</option>
+        <option value="false">Away</option>
+      </select>
+    </div>
+    <label>Venue</label>
+    <input id="newVenue" placeholder="e.g. Laithwaite Park Hub P2" />
+    <button class="submit" id="addEventBtn">Add to Calendar</button>
+  </div>`;
+}
+
+function renderCoachToggle(){
+  return `<div class="add-box" style="margin-top:12px;">
+    <div class="toggle-row">
+      <span class="lbl">Coach mode — show delete controls</span>
+      <label class="switch">
+        <input type="checkbox" id="coachToggle" ${state.coachMode ? 'checked':''}/>
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>`;
+}
+
+function renderSeasonTicker(){
+  const p = past();
+  let w=0,d=0,l=0;
+  p.forEach(e => { const t = resultTag(e); if(t==='W') w++; else if(t==='D') d++; else l++; });
+  return `<div class="ticker-strip">
+    <div><span class="tn">${p.length}</span><span class="tl">Played</span></div>
+    <div><span class="tn">${w}</span><span class="tl">Won</span></div>
+    <div><span class="tn">${d}</span><span class="tl">Drawn</span></div>
+    <div><span class="tn">${l}</span><span class="tl">Lost</span></div>
+  </div>`;
+}
+
+function scorersLine(ev){
+  if(!ev.stats) return '';
+  const scorers = Object.entries(ev.stats)
+    .map(([pid, s]) => ({ player: state.roster.find(p=>p.id===pid), goals: s.goals || 0 }))
+    .filter(x => x.player && x.goals > 0)
+    .sort((a,b) => b.goals - a.goals);
+  if(scorers.length === 0) return '';
+  return `<div class="scorers-line">${scorers.map(s => `${s.player.name} ${'⚽'.repeat(s.goals)}`).join(' &nbsp;·&nbsp; ')}</div>`;
+}
+
+function renderResults(){
+  const p = past();
+  let html = renderSeasonTicker();
+  html += `<div class="section-title">Results <span class="count">${p.length}</span></div>`;
+  if(p.length === 0){
+    html += `<div class="empty">No results yet — enter a score from the Fixtures tab once a match is played.</div>`;
+  } else {
+    p.forEach(e => {
+      const tag = resultTag(e);
+      const isOpen = state.expandedMatchEntryId === e.id;
+      const attOpen = state.expandedEventId === e.id;
+      const editOpen = state.expandedEditId === e.id;
+      html += `<div class="card clickable" data-toggle-entry="${e.id}">
+        <div class="row1">
+          <div>
+            <div class="match">${matchLabel(e)}</div>
+            <div class="meta">${fmtDateShort(e.date)}${e.venue ? ` · ${e.venue}` : ''}</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="score">${e.scoreFor} - ${e.scoreAgainst}</div>
+            <span class="result-tag ${tag}">${tag}</span>
+          </div>
+        </div>
+        ${scorersLine(e)}
+        ${renderMiniTally(e)}
+        <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; justify-content:flex-end;">
+          <button class="pill accent" data-toggle-att-only="${e.id}">${attOpen ? 'Hide' : 'Mark Who Played'}</button>
+          ${state.coachMode ? `<button class="pill" data-toggle-edit="${e.id}">${editOpen ? 'Hide Edit' : 'Edit'}</button>` : ''}
+        </div>
+        ${attOpen ? renderAttendancePanel(e) : ''}
+        ${editOpen ? renderEditFixturePanel(e) : ''}
+        <div class="chevron">${isOpen ? '▲ hide report & stats' : '▼ edit result, report & stats'}</div>
+        ${isOpen ? renderMatchEntryPanel(e) : ''}
+      </div>`;
+    });
+  }
+  return html;
+}
+
+function renderMatchEntryPanel(ev){
+  const scoreFor = (typeof ev.scoreFor === 'number') ? ev.scoreFor : '';
+  const scoreAgainst = (typeof ev.scoreAgainst === 'number') ? ev.scoreAgainst : '';
+  const stats = ev.stats || {};
+
+  let html = `<div class="att-panel" data-stop-toggle="1">
+    <div class="rsvp-note">Score</div>
+    <div class="two-col">
+      <div>
+        <label>Hornets</label>
+        <input type="number" min="0" class="stat-num" id="scoreFor-${ev.id}" value="${scoreFor}" />
+      </div>
+      <div>
+        <label>${ev.opponent}</label>
+        <input type="number" min="0" class="stat-num" id="scoreAgainst-${ev.id}" value="${scoreAgainst}" />
+      </div>
+    </div>
+
+    <div class="rsvp-note" style="margin-top:16px;">Match Report</div>
+    <textarea id="reportText-${ev.id}" class="report-textarea" placeholder="How did it go?">${ev.report || ''}</textarea>`;
+
+  if(state.roster.length > 0){
+    html += `<div class="rsvp-note" style="margin-top:16px;">Player Stats</div>
+    <div class="stats-grid-head">
+      <span></span><span>Goals</span><span>Assists</span><span>Clean sheet</span>
+    </div>`;
+    state.roster.forEach(p => {
+      const s = stats[p.id] || {};
+      html += `<div class="stats-grid-row">
+        <span class="name">${p.name}</span>
+        <input type="number" min="0" class="stat-num" id="goals-${ev.id}-${p.id}" value="${s.goals || 0}" />
+        <input type="number" min="0" class="stat-num" id="assists-${ev.id}-${p.id}" value="${s.assists || 0}" />
+        <input type="checkbox" class="stat-check" id="clean-${ev.id}-${p.id}" ${s.cleanSheet ? 'checked' : ''} />
+      </div>`;
+    });
+
+    html += `<div class="rsvp-note" style="margin-top:16px;">Player of the Match</div>
+    <div class="two-col">
+      <div>
+        <label>Coach's Pick</label>
+        <select id="coachPotm-${ev.id}">
+          <option value="">—</option>
+          ${state.roster.map(p=>`<option value="${p.id}" ${ev.coachPOTM===p.id?'selected':''}>${p.name}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <label>Parents' Pick</label>
+        <select id="parentPotm-${ev.id}">
+          <option value="">—</option>
+          ${state.roster.map(p=>`<option value="${p.id}" ${ev.parentPOTM===p.id?'selected':''}>${p.name}</option>`).join('')}
+        </select>
+      </div>
+    </div>`;
+  } else {
+    html += `<div class="empty" style="margin-top:14px;">Add players in the Squad tab to record stats and POTM.</div>`;
+  }
+
+  html += `<button class="submit" style="margin-top:16px;" data-save-match="${ev.id}">Save Result</button>`;
+
+  if(state.coachMode){
+    html += `<div style="display:flex; gap:16px; margin-top:12px; justify-content:flex-end;">`;
+    if(ev.played){
+      html += `<button class="pill" data-undo-result="${ev.id}">Mark as not played</button>`;
+    }
+    html += `<button class="pill" style="color:var(--red); border-color:var(--red-dim);" data-delete-match="${ev.id}">Delete match</button>
+    </div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+function renderStats(){
+  const totals = {};
+  state.roster.forEach(p => { totals[p.id] = { name:p.name, appearances:0, goals:0, assists:0, cleanSheets:0, coachPOTM:0, parentPOTM:0 }; });
+  past().forEach(e => {
+    if(e.type === 'match'){
+      const att = state.attendance[e.id] || {};
+      Object.entries(att).forEach(([pid, status]) => {
+        if(status === 'in' && totals[pid]) totals[pid].appearances++;
+      });
+    }
+    if(e.stats){
+      Object.entries(e.stats).forEach(([pid, s]) => {
+        if(!totals[pid]) return;
+        totals[pid].goals += s.goals || 0;
+        totals[pid].assists += s.assists || 0;
+        if(s.cleanSheet) totals[pid].cleanSheets++;
+      });
+    }
+    if(e.coachPOTM && totals[e.coachPOTM]) totals[e.coachPOTM].coachPOTM++;
+    if(e.parentPOTM && totals[e.parentPOTM]) totals[e.parentPOTM].parentPOTM++;
+  });
+  const rows = Object.values(totals).sort((a,b) => b.appearances - a.appearances || b.goals - a.goals || b.assists - a.assists);
+
+  let html = renderSeasonTicker();
+  html += `<div class="section-title">Season Stats</div>`;
+  html += `<p style="font-size:11.5px; color:var(--white-dim); margin:-4px 0 12px;">Appearances are based on players marked "in" for a played match.</p>`;
+  if(rows.length === 0){
+    html += `<div class="empty">Add players to the Squad, then log stats from a played match in the Results tab.</div>`;
+  } else {
+    html += `<div class="stats-table-wrap"><table class="stats-table">
+      <thead><tr><th>Player</th><th>Apps</th><th>G</th><th>A</th><th>CS</th><th>Coach POTM</th><th>Parent POTM</th></tr></thead>
+      <tbody>`;
+    rows.forEach(r => {
+      html += `<tr><td>${r.name}</td><td>${r.appearances}</td><td>${r.goals}</td><td>${r.assists}</td><td>${r.cleanSheets}</td><td>${r.coachPOTM}</td><td>${r.parentPOTM}</td></tr>`;
+    });
+    html += `</tbody></table></div>`;
+  }
+  return html;
+}
+
+
+function renderTable(){
+  const OUR_TEAM = 'Cherrybrook U12 hornets';
+  const rows = [...state.leagueTable].map(t => ({...t, pts: (t.won||0)*3 + (t.drawn||0)}));
+  rows.sort((a,b) => b.pts - a.pts || b.gd - a.gd);
+
+  let html = `<div class="section-title">League Table <span class="count">U12 East</span></div>`;
+  if(rows.length === 0){
+    html += `<div class="empty">No table entered yet.</div>`;
+  } else {
+    html += `<div class="stats-table-wrap"><table class="stats-table league-table">
+      <thead><tr><th>Pos</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead>
+      <tbody>`;
+    rows.forEach((t, i) => {
+      const isUs = t.team.trim().toLowerCase() === OUR_TEAM.toLowerCase();
+      html += `<tr class="${isUs ? 'lt-us' : ''}">
+        <td>${i+1}</td><td>${t.team}</td><td>${t.played||0}</td><td>${t.won||0}</td><td>${t.drawn||0}</td><td>${t.lost||0}</td><td>${t.gd>0?'+':''}${t.gd||0}</td><td>${t.pts}</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+  }
+
+  if(state.coachMode){
+    html += `<div class="add-box">
+      <h3>Edit League Table</h3>
+      <p style="font-size:11.5px; color:var(--white-dim); margin:0 0 12px;">Update these after checking the league site — points and position are worked out automatically.</p>`;
+    state.leagueTable.forEach(t => {
+      html += `<div style="border-bottom:1px solid var(--line); padding-bottom:12px; margin-bottom:12px;">
+        <label>Team</label>
+        <input id="lt-team-${t.id}" value="${t.team}" />
+        <div style="display:grid; grid-template-columns: repeat(5, 1fr); gap:6px; margin-top:8px;">
+          <div><label>P</label><input type="number" min="0" class="stat-num" id="lt-p-${t.id}" value="${t.played||0}" /></div>
+          <div><label>W</label><input type="number" min="0" class="stat-num" id="lt-w-${t.id}" value="${t.won||0}" /></div>
+          <div><label>D</label><input type="number" min="0" class="stat-num" id="lt-d-${t.id}" value="${t.drawn||0}" /></div>
+          <div><label>L</label><input type="number" min="0" class="stat-num" id="lt-l-${t.id}" value="${t.lost||0}" /></div>
+          <div><label>GD</label><input type="number" class="stat-num" id="lt-gd-${t.id}" value="${t.gd||0}" /></div>
+        </div>
+        <div style="text-align:right; margin-top:8px;"><button class="rm" data-rm-team="${t.id}">Remove team</button></div>
+      </div>`;
+    });
+    html += `<button class="submit" id="saveTableBtn">Save Table</button>
+      <button class="submit secondary" style="margin-top:8px;" id="addTeamBtn">Add Team</button>
+    </div>`;
+  }
+
+  return html;
+}
+
+function computeArchiveTicker(events){
+  const played = events.filter(e => e.type==='match' && e.played);
+  let w=0,d=0,l=0;
+  played.forEach(e => {
+    const t = e.scoreFor > e.scoreAgainst ? 'W' : (e.scoreFor < e.scoreAgainst ? 'L' : 'D');
+    if(t==='W') w++; else if(t==='D') d++; else l++;
+  });
+  return { played: played.length, w, d, l };
+}
+
+function computeArchiveScorers(ev, roster){
+  if(!ev.stats) return '';
+  const scorers = Object.entries(ev.stats)
+    .map(([pid, s]) => ({ player: roster.find(p=>p.id===pid), goals: s.goals || 0 }))
+    .filter(x => x.player && x.goals > 0)
+    .sort((a,b) => b.goals - a.goals);
+  if(scorers.length === 0) return '';
+  return scorers.map(s => `${s.player.name} ${'⚽'.repeat(s.goals)}`).join(' &nbsp;·&nbsp; ');
+}
+
+function computeArchiveStats(events, roster, attendance){
+  const totals = {};
+  roster.forEach(p => { totals[p.id] = { name:p.name, appearances:0, goals:0, assists:0, cleanSheets:0, coachPOTM:0, parentPOTM:0 }; });
+  events.filter(e => e.type==='match' && e.played).forEach(e => {
+    const att = attendance[e.id] || {};
+    Object.entries(att).forEach(([pid, status]) => { if(status === 'in' && totals[pid]) totals[pid].appearances++; });
+    if(e.stats){
+      Object.entries(e.stats).forEach(([pid, s]) => {
+        if(!totals[pid]) return;
+        totals[pid].goals += s.goals || 0;
+        totals[pid].assists += s.assists || 0;
+        if(s.cleanSheet) totals[pid].cleanSheets++;
+      });
+    }
+    if(e.coachPOTM && totals[e.coachPOTM]) totals[e.coachPOTM].coachPOTM++;
+    if(e.parentPOTM && totals[e.parentPOTM]) totals[e.parentPOTM].parentPOTM++;
+  });
+  return Object.values(totals).sort((a,b) => b.appearances - a.appearances || b.goals - a.goals || b.assists - a.assists);
+}
+
+function renderHistory(){
+  if(state.viewingArchive){
+    const a = state.viewingArchive;
+    const ticker = computeArchiveTicker(a.events || []);
+    const statsRows = computeArchiveStats(a.events || [], a.roster || [], a.attendance || {});
+    const played = (a.events || []).filter(e => e.type==='match' && e.played).sort((x,y) => (y.date+y.kickoff).localeCompare(x.date+x.kickoff));
+
+    let html = `<button class="pill" data-back-archive="1" style="margin-bottom:16px;">← Back to Seasons</button>`;
+    html += `<div class="section-title">${a.seasonLabel}</div>`;
+    html += `<div class="ticker-strip">
+      <div><span class="tn">${ticker.played}</span><span class="tl">Played</span></div>
+      <div><span class="tn">${ticker.w}</span><span class="tl">Won</span></div>
+      <div><span class="tn">${ticker.d}</span><span class="tl">Drawn</span></div>
+      <div><span class="tn">${ticker.l}</span><span class="tl">Lost</span></div>
+    </div>`;
+
+    html += `<div class="section-title">Results</div>`;
+    if(played.length === 0){
+      html += `<div class="empty">No results recorded that season.</div>`;
+    } else {
+      played.forEach(e => {
+        const tag = e.scoreFor > e.scoreAgainst ? 'W' : (e.scoreFor < e.scoreAgainst ? 'L' : 'D');
+        const label = e.home ? `Hornets vs ${e.opponent}` : `${e.opponent} vs Hornets`;
+        const scorers = computeArchiveScorers(e, a.roster || []);
+        html += `<div class="card">
+          <div class="row1">
+            <div><div class="match">${label}</div><div class="meta">${fmtDateShort(e.date)}${e.venue ? ` · ${e.venue}` : ''}</div></div>
+            <div style="text-align:right;"><div class="score">${e.scoreFor} - ${e.scoreAgainst}</div><span class="result-tag ${tag}">${tag}</span></div>
+          </div>
+          ${scorers ? `<div class="scorers-line">${scorers}</div>` : ''}
+        </div>`;
+      });
+    }
+
+    html += `<div class="section-title">Season Stats</div>`;
+    if(statsRows.length === 0){
+      html += `<div class="empty">No player stats recorded that season.</div>`;
+    } else {
+      html += `<div class="stats-table-wrap"><table class="stats-table">
+        <thead><tr><th>Player</th><th>Apps</th><th>G</th><th>A</th><th>CS</th><th>Coach POTM</th><th>Parent POTM</th></tr></thead><tbody>`;
+      statsRows.forEach(r => {
+        html += `<tr><td>${r.name}</td><td>${r.appearances}</td><td>${r.goals}</td><td>${r.assists}</td><td>${r.cleanSheets}</td><td>${r.coachPOTM}</td><td>${r.parentPOTM}</td></tr>`;
+      });
+      html += `</tbody></table></div>`;
+    }
+
+    if(a.leagueTable && a.leagueTable.length){
+      html += `<div class="section-title">Final League Table</div>`;
+      const rows = a.leagueTable.map(t => ({...t, pts:(t.won||0)*3+(t.drawn||0)})).sort((x,y) => y.pts-x.pts || y.gd-x.gd);
+      html += `<div class="stats-table-wrap"><table class="stats-table"><thead><tr><th>Pos</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead><tbody>`;
+      rows.forEach((t,i) => {
+        html += `<tr class="${t.team.trim().toLowerCase()==='cherrybrook u12 hornets' ? 'lt-us' : ''}"><td>${i+1}</td><td>${t.team}</td><td>${t.played||0}</td><td>${t.won||0}</td><td>${t.drawn||0}</td><td>${t.lost||0}</td><td>${t.gd>0?'+':''}${t.gd||0}</td><td>${t.pts}</td></tr>`;
+      });
+      html += `</tbody></table></div>`;
+    }
+    return html;
+  }
+
+  let html = `<div class="section-title">Season History</div>`;
+  if(state.coachMode){
+    html += `<div class="add-box">
+      <h3>Current Season: ${state.seasonLabel || 'Not set'}</h3>
+      <p style="font-size:11.5px; color:var(--white-dim); margin:8px 0 12px;">This archives all of this season's fixtures, results, stats and league table so they stay here for good — then clears them ready for the new season. The squad stays as it is; edit it separately in the Squad tab.</p>
+      <button class="submit" id="endSeasonBtn">End Season &amp; Start New</button>
+    </div>`;
+  }
+  if(!state.pastSeasons || state.pastSeasons.length === 0){
+    html += `<div class="empty">No past seasons archived yet.</div>`;
+  } else {
+    [...state.pastSeasons].reverse().forEach(s => {
+      html += `<div class="card clickable" data-view-archive="${s.id}">
+        <div class="row1"><div><div class="match">${s.label}</div><div class="meta">Archived ${fmtDateShort((s.archivedAt||'').slice(0,10))}</div></div></div>
+      </div>`;
+    });
+  }
+  return html;
+}
+
+function renderSquad(){
+  let html = `<div class="section-title">Squad <span class="count">${state.roster.length}</span></div>`;
+  if(state.roster.length === 0){
+    html += `<div class="empty">No players added yet.</div>`;
+  } else {
+    state.roster.forEach(p => {
+      html += `<div class="roster-row">
+        <span class="name">${p.name}</span>
+        <div class="actions">
+          <button class="rn" data-rename-player="${p.id}">Rename</button>
+          <button class="rm" data-rm-player="${p.id}">Remove</button>
+        </div>
+      </div>`;
+    });
+  }
+  html += `<div class="add-box">
+    <h3>Add Player</h3>
+    <label>Name</label>
+    <input id="newPlayerName" placeholder="Player name" />
+    <button class="submit" id="addPlayerBtn">Add to Squad</button>
+  </div>`;
+  html += renderCoachToggle();
+  return html;
+}
+
+function bindTabEvents(){
+  $$('#tabs button').forEach(b => b.onclick = () => { state.tab = b.dataset.tab; render(); });
+
+  $$('.report-textarea').forEach(ta => {
+    const grow = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
+    grow();
+    ta.addEventListener('input', grow);
+  });
+
+  const typeSel = $('#newType');
+  if(typeSel){
+    typeSel.onchange = () => {
+      const isTraining = typeSel.value === 'training';
+      $('#oppField').style.display = isTraining ? 'none' : 'block';
+      $('#homeField').style.display = isTraining ? 'none' : 'block';
+    };
+  }
+  const addBtn = $('#addEventBtn');
+  if(addBtn) addBtn.onclick = async () => {
+    const type = $('#newType').value;
+    const date = $('#newDate').value;
+    const time = $('#newTime').value;
+    const venue = $('#newVenue').value.trim();
+    if(!date || !time || !venue){ alert('Please fill in date, time and venue.'); return; }
+    const ev = {
+      id: 'e' + Date.now(),
+      type,
+      date, kickoff: time, venue,
+      played: false
+    };
+    if(type === 'match'){
+      const opp = $('#newOpponent').value.trim();
+      if(!opp){ alert('Please enter the opponent.'); return; }
+      ev.opponent = opp;
+      ev.home = $('#newHome').value === 'true';
+    }
+    state.events.push(ev);
+    await saveField('events', state.events);
+    render();
+  };
+
+  const saveTrainingBtn = $('#saveTrainingBtn');
+  if(saveTrainingBtn) saveTrainingBtn.onclick = async () => {
+    const dayOfWeek = parseInt($('#trainDay').value);
+    const time = $('#trainTime').value;
+    const venue = $('#trainVenue').value.trim() || 'TBC — check with coach';
+    state.trainingConfig = { dayOfWeek, time, venue };
+    await saveField('trainingConfig', state.trainingConfig);
+    render();
+  };
+
+  $$('[data-undo-result]').forEach(b => b.onclick = async (evt) => {
+    evt.stopPropagation();
+    const id = b.dataset.undoResult;
+    const ev = state.events.find(e=>e.id===id);
+    ev.played = false;
+    delete ev.scoreFor; delete ev.scoreAgainst;
+    await saveField('events', state.events);
+    render();
+  });
+
+  $$('[data-delete-match]').forEach(b => b.onclick = async (evt) => {
+    evt.stopPropagation();
+    const id = b.dataset.deleteMatch;
+    if(!confirm('Delete this match entirely? This removes the fixture, score, report and stats — it cannot be undone.')) return;
+    state.events = state.events.filter(e => e.id !== id);
+    if(state.expandedMatchEntryId === id) state.expandedMatchEntryId = null;
+    await saveField('events', state.events);
+    render();
+  });
+
+  const saveTableBtn = $('#saveTableBtn');
+  if(saveTableBtn) saveTableBtn.onclick = async () => {
+    state.leagueTable.forEach(t => {
+      const teamEl = $(`#lt-team-${t.id}`);
+      const pEl = $(`#lt-p-${t.id}`);
+      const wEl = $(`#lt-w-${t.id}`);
+      const dEl = $(`#lt-d-${t.id}`);
+      const lEl = $(`#lt-l-${t.id}`);
+      const gdEl = $(`#lt-gd-${t.id}`);
+      if(teamEl && teamEl.value.trim()) t.team = teamEl.value.trim();
+      t.played = pEl ? parseInt(pEl.value) || 0 : t.played;
+      t.won = wEl ? parseInt(wEl.value) || 0 : t.won;
+      t.drawn = dEl ? parseInt(dEl.value) || 0 : t.drawn;
+      t.lost = lEl ? parseInt(lEl.value) || 0 : t.lost;
+      t.gd = gdEl ? parseInt(gdEl.value) || 0 : t.gd;
+    });
+    await saveField('leagueTable', state.leagueTable);
+    render();
+  };
+
+  const addTeamBtn = $('#addTeamBtn');
+  if(addTeamBtn) addTeamBtn.onclick = async () => {
+    const name = prompt('Team name:');
+    if(!name || !name.trim()) return;
+    state.leagueTable.push({ id:'lt'+Date.now(), team:name.trim(), played:0, won:0, drawn:0, lost:0, gd:0 });
+    await saveField('leagueTable', state.leagueTable);
+    render();
+  };
+
+  $$('[data-rm-team]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.rmTeam;
+    if(!confirm('Remove this team from the table?')) return;
+    state.leagueTable = state.leagueTable.filter(t => t.id !== id);
+    await saveField('leagueTable', state.leagueTable);
+    render();
+  });
+
+  $$('[data-back-archive]').forEach(b => b.onclick = () => {
+    state.viewingArchive = null;
+    render();
+  });
+
+  $$('[data-view-archive]').forEach(el => el.addEventListener('click', async () => {
+    const id = el.dataset.viewArchive;
+    try{
+      const snap = await db.collection('hornets').doc(id).get();
+      if(snap.exists){
+        state.viewingArchive = snap.data();
+        render();
+      } else {
+        alert('Could not find that archived season.');
+      }
+    } catch(err){
+      console.error('Archive load failed', err);
+      alert('Could not load that season — check your connection and try again.');
+    }
+  }));
+
+  const endSeasonBtn = $('#endSeasonBtn');
+  if(endSeasonBtn) endSeasonBtn.onclick = async () => {
+    const newLabel = prompt('Name for the NEW season (e.g. 2027/28):');
+    if(!newLabel || !newLabel.trim()) return;
+    if(!confirm(`This will archive all of ${state.seasonLabel || 'the current season'}'s fixtures, results, stats and table, then clear them ready for ${newLabel.trim()}. The squad list stays as it is. Continue?`)) return;
+
+    const archiveId = (state.seasonLabel || 'season').replace(/[^\w-]+/g, '-') + '-' + Date.now();
+    const archiveData = {
+      seasonLabel: state.seasonLabel || 'Previous Season',
+      archivedAt: new Date().toISOString(),
+      events: state.events,
+      roster: state.roster,
+      attendance: state.attendance,
+      leagueTable: state.leagueTable
+    };
+
+    try{
+      await db.collection('hornets').doc(archiveId).set(archiveData);
+    } catch(err){
+      console.error('Archive save failed', err);
+      alert('Could not save the archive — check your connection and try again. Nothing has been cleared.');
+      return;
+    }
+
+    state.pastSeasons = state.pastSeasons || [];
+    state.pastSeasons.push({ id: archiveId, label: archiveData.seasonLabel, archivedAt: archiveData.archivedAt });
+    state.events = [];
+    state.attendance = {};
+    state.leagueTable = [];
+    state.seasonLabel = newLabel.trim();
+
+    await saveField('pastSeasons', state.pastSeasons);
+    await saveField('events', state.events);
+    await saveField('attendance', state.attendance);
+    await saveField('leagueTable', state.leagueTable);
+    await saveField('seasonLabel', state.seasonLabel);
+
+    updateHeaderSeason();
+    state.tab = 'fixtures';
+    render();
+  };
+
+  const addPlayerBtn = $('#addPlayerBtn');
+  if(addPlayerBtn) addPlayerBtn.onclick = async () => {
+    const name = $('#newPlayerName').value.trim();
+    if(!name) return;
+    state.roster.push({ id:'p'+Date.now(), name });
+    await saveField('roster', state.roster);
+    render();
+  };
+
+  $$('[data-rm-player]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.rmPlayer;
+    if(!confirm('Remove this player from the squad?')) return;
+    state.roster = state.roster.filter(p=>p.id!==id);
+    await saveField('roster', state.roster);
+    render();
+  });
+
+  const coachToggle = $('#coachToggle');
+  if(coachToggle) coachToggle.onchange = () => {
+    state.coachMode = coachToggle.checked;
+    try { localStorage.setItem('hornetsCoachMode', state.coachMode); } catch(e){ /* ignore */ }
+    render();
+  };
+
+  $$('[data-toggle-att-only]').forEach(el => el.addEventListener('click', (evt) => {
+    evt.stopPropagation();
+    if(evt.target.closest('.att-panel')) return;
+    const id = el.dataset.toggleAttOnly;
+    state.expandedEventId = state.expandedEventId === id ? null : id;
+    render();
+  }));
+
+  $$('[data-toggle-edit]').forEach(el => el.addEventListener('click', (evt) => {
+    evt.stopPropagation();
+    if(evt.target.closest('.att-panel')) return;
+    const id = el.dataset.toggleEdit;
+    state.expandedEditId = state.expandedEditId === id ? null : id;
+    render();
+  }));
+
+  $$('[data-save-edit]').forEach(b => b.onclick = async (evt) => {
+    evt.stopPropagation();
+    const id = b.dataset.saveEdit;
+    const ev = state.events.find(e=>e.id===id);
+    const dateEl = $(`#editDate-${id}`);
+    const timeEl = $(`#editTime-${id}`);
+    const venueEl = $(`#editVenue-${id}`);
+    if(dateEl && dateEl.value) ev.date = dateEl.value;
+    if(timeEl && timeEl.value) ev.kickoff = timeEl.value;
+    if(venueEl) ev.venue = venueEl.value.trim();
+    if(ev.type === 'match'){
+      const oppEl = $(`#editOpponent-${id}`);
+      const homeEl = $(`#editHome-${id}`);
+      if(oppEl && oppEl.value.trim()) ev.opponent = oppEl.value.trim();
+      if(homeEl) ev.home = homeEl.value === 'true';
+    }
+    await saveField('events', state.events);
+    state.expandedEditId = null;
+    render();
+  });
+
+  $$('[data-toggle-att]').forEach(el => el.addEventListener('click', (evt) => {
+    if(evt.target.closest('[data-toggle-entry]') || evt.target.closest('.att-panel')) return;
+    const id = el.dataset.toggleAtt;
+    state.expandedEventId = state.expandedEventId === id ? null : id;
+    render();
+  }));
+
+  $$('[data-toggle-entry]').forEach(el => el.addEventListener('click', (evt) => {
+    evt.stopPropagation();
+    if(evt.target.closest('.att-panel')) return;
+    const id = el.dataset.toggleEntry;
+    state.expandedMatchEntryId = state.expandedMatchEntryId === id ? null : id;
+    render();
+  }));
+
+  $$('[data-save-match]').forEach(b => b.onclick = async (evt) => {
+    evt.stopPropagation();
+    const id = b.dataset.saveMatch;
+    const ev = state.events.find(e=>e.id===id);
+
+    const scoreForEl = $(`#scoreFor-${id}`);
+    const scoreAgainstEl = $(`#scoreAgainst-${id}`);
+    if(!scoreForEl.value || !scoreAgainstEl.value){ alert('Please enter both scores.'); return; }
+    ev.scoreFor = parseInt(scoreForEl.value) || 0;
+    ev.scoreAgainst = parseInt(scoreAgainstEl.value) || 0;
+    ev.played = true;
+
+    const reportEl = $(`#reportText-${id}`);
+    ev.report = reportEl ? reportEl.value : '';
+
+    const stats = {};
+    state.roster.forEach(p => {
+      const goalsEl = $(`#goals-${id}-${p.id}`);
+      const assistsEl = $(`#assists-${id}-${p.id}`);
+      const cleanEl = $(`#clean-${id}-${p.id}`);
+      const goals = goalsEl ? parseInt(goalsEl.value) || 0 : 0;
+      const assists = assistsEl ? parseInt(assistsEl.value) || 0 : 0;
+      const cleanSheet = cleanEl ? cleanEl.checked : false;
+      if(goals || assists || cleanSheet){
+        stats[p.id] = { goals, assists, cleanSheet };
+      }
+    });
+    ev.stats = stats;
+
+    const coachSel = $(`#coachPotm-${id}`);
+    const parentSel = $(`#parentPotm-${id}`);
+    ev.coachPOTM = coachSel && coachSel.value ? coachSel.value : null;
+    ev.parentPOTM = parentSel && parentSel.value ? parentSel.value : null;
+
+    await saveField('events', state.events);
+    state.expandedMatchEntryId = null;
+    state.tab = 'results';
+    render();
+  });
+
+  $$('[data-att]').forEach(b => b.onclick = async (evt) => {
+    evt.stopPropagation();
+    const [evId, playerId, status] = b.dataset.att.split('|');
+    if(!state.attendance[evId]) state.attendance[evId] = {};
+    const current = state.attendance[evId][playerId];
+    state.attendance[evId][playerId] = current === status ? undefined : status;
+    if(state.attendance[evId][playerId] === undefined) delete state.attendance[evId][playerId];
+    await saveField('attendance', state.attendance);
+    render();
+  });
+
+  $$('[data-rename-player]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.renamePlayer;
+    const player = state.roster.find(p=>p.id===id);
+    const newName = prompt('Player name:', player.name);
+    if(!newName || !newName.trim()) return;
+    player.name = newName.trim();
+    await saveField('roster', state.roster);
+    render();
+  });
+}
+
+loadAll();
+</script>
+</body>
+</html>
